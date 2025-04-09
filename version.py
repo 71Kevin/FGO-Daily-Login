@@ -62,6 +62,9 @@ def get_play_store_ver(region: str):
 
 def get_version(region: str) -> str:
     play_store_version = get_play_store_ver(region)
+    print(f"[DEBUG] Versão detectada na Play Store para região {region}: {play_store_version}")
+
     if play_store_version and VERSION_REGEX.match(play_store_version):
         return play_store_version
-    return "2.70.0"
+    else:
+        raise ValueError("Não foi possível obter a versão mais recente da Play Store.")
