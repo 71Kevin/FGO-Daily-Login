@@ -60,9 +60,8 @@ def get_play_store_ver(region: str):
 
     return None
 
-def get_version(region: str) -> None:
+def get_version(region: str) -> str:
     play_store_version = get_play_store_ver(region)
-    if play_store_version is not None:
+    if play_store_version and VERSION_REGEX.match(play_store_version):
         return play_store_version
-    else:
-        return "2.70.0"
+    return "2.70.0"
