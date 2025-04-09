@@ -7,6 +7,7 @@
 
 import re
 import time
+
 import json5
 import httpx
 import lxml.html
@@ -16,7 +17,6 @@ PLAY_STORE_URL = {
     "JP": "https://play.google.com/store/apps/details?id=com.aniplex.fategrandorder",
     "KR": "https://play.google.com/store/apps/details?id=com.netmarble.fgok",
     "TW": "https://play.google.com/store/apps/details?id=com.xiaomeng.fategrandorder",
-    "CN": "https://static.biligame.com/config/fgo.config.js"
 }
 
 PLAY_STORE_XPATH_1 = "/html/body/div[1]/div[4]/c-wiz/div/div[2]/div/div/main/c-wiz[4]/div[1]/div[2]/div/div[4]/span/div/span"
@@ -24,14 +24,13 @@ PLAY_STORE_XPATH_2 = "/html/body/div[1]/div[4]/c-wiz/div/div[2]/div/div/main/c-w
 PLAY_STORE_XPATH_3 = '//div[div[text()="Current Version"]]/span/div/span/text()'
 VERSION_REGEX = re.compile(r"^\d+\.\d+\.\d+$")
 
-
 def get_CN_android_version():
-    r = httpx.get(PLAY_STORE_URL["CN"])
+    r = httpx.get("https://static.biligame.com/config/fgo.config.js")
     if match := re.search(r"\"latest_version\": \"(.*)\"", r.text):
         if VERSION_REGEX.match(match.group(1)):
             return match.group(1)
-    return None
 
+    return None
 
 def get_play_store_ver(region: str):
     if region == "CN":
@@ -71,6 +70,5 @@ def get_play_store_ver(region: str):
 
     return None
 
-
-def get_version(region: str) -> str:
+def get_version(region: str) -> None:
     return get_play_store_ver(region)
