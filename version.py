@@ -25,38 +25,32 @@ PLAY_STORE_XPATH_3 = '//div[div[text()="Current Version"]]/span/div/span/text()'
 VERSION_REGEX = re.compile(r"^\d+\.\d+\.\d+$")
 
 def get_play_store_ver(region: str):
+    import re
 
-    play_store_response = httpx.get(PLAY_STORE_URL[region], follow_redirects=True)
-    play_store_html = lxml.html.fromstring(play_store_response.text)
+    url = PLAY_STORE_URL[region]
+    response = httpx.get(url, follow_redirects=True)
 
-    for xpath in (PLAY_STORE_XPATH_1, PLAY_STORE_XPATH_2, PLAY_STORE_XPATH_3):
-        try:
-            xpath_version: str = play_store_html.xpath(xpath)[0].text
-            if VERSION_REGEX.match(xpath_version):
-                return xpath_version
-        except:  # pylint: disable=bare-except
-            continue
+    # Tente pegar via regex diretamente
+    version_match = re.search(r'Current Version.*?>([\d.]+)<', response.text)
+    if version_match and VERSION_REGEX.match(version_match.group(1)):
+        return version_match.group(1)
 
-    for match in re.finditer(
-        r"<script nonce=\"\S+\">AF_initDataCallback\((.*?)\);",
-        play_store_response.text,
-    ):
+    # Procura por "AF_initDataCallback" com versão válida
+    for match in re.finditer(r"AF_initDataCallback\((.*?)\);", response.text):
         try:
             data = json5.loads(match.group(1))
             if (
                 "data" in data
-                and len(data["data"]) > 2
-                and isinstance(data["data"][1], str)
-                and VERSION_REGEX.match(data["data"][1])
+                and isinstance(data["data"], list)
             ):
-                return data["data"][1]
-
-            deep_version = data["data"][1][2][140][0][0][0]
-            if isinstance(deep_version, str) and VERSION_REGEX.match(deep_version):
-                return deep_version
-
-        except:  # pylint: disable=bare-except
-            pass
+                # Tenta vários níveis
+                flat_data = str(data["data"])
+                version_candidates = re.findall(r"\d+\.\d+\.\d+", flat_data)
+                for v in version_candidates:
+                    if VERSION_REGEX.match(v):
+                        return v
+        except:
+            continue
 
     return None
 
