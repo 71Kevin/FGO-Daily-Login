@@ -24,17 +24,7 @@ PLAY_STORE_XPATH_2 = "/html/body/div[1]/div[4]/c-wiz/div/div[2]/div/div/main/c-w
 PLAY_STORE_XPATH_3 = '//div[div[text()="Current Version"]]/span/div/span/text()'
 VERSION_REGEX = re.compile(r"^\d+\.\d+\.\d+$")
 
-def get_CN_android_version():
-    r = httpx.get("https://static.biligame.com/config/fgo.config.js")
-    if match := re.search(r"\"latest_version\": \"(.*)\"", r.text):
-        if VERSION_REGEX.match(match.group(1)):
-            return match.group(1)
-
-    return None
-
 def get_play_store_ver(region: str):
-    if region == "CN":
-        return get_CN_android_version()
 
     play_store_response = httpx.get(PLAY_STORE_URL[region], follow_redirects=True)
     play_store_html = lxml.html.fromstring(play_store_response.text)
@@ -44,7 +34,7 @@ def get_play_store_ver(region: str):
             xpath_version: str = play_store_html.xpath(xpath)[0].text
             if VERSION_REGEX.match(xpath_version):
                 return xpath_version
-        except:
+        except:  # pylint: disable=bare-except
             continue
 
     for match in re.finditer(
@@ -65,10 +55,14 @@ def get_play_store_ver(region: str):
             if isinstance(deep_version, str) and VERSION_REGEX.match(deep_version):
                 return deep_version
 
-        except:
+        except:  # pylint: disable=bare-except
             pass
 
     return None
 
 def get_version(region: str) -> None:
-    return get_play_store_ver(region)
+    play_store_version = get_play_store_ver(region)
+    if play_store_version is not None:
+        return play_store_version
+    else:
+        return "2.70.0"
